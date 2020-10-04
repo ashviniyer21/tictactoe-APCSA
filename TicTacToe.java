@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class TicTacToe {
+    private static IPConnect connect;
+    private static Scanner s;
     private static void drawBoard(char[] board)    {
         System.out.println();
         System.out.println("  " + board[0]+"|"+board[1]+"|"+board[2]);
@@ -41,13 +43,45 @@ public class TicTacToe {
         }
         return board[i] != ' ';
     }
-
-    public static void main(String [ ] args) throws IOException {
-        IPConnect connect = new IPConnect();
-        char[] board = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
-
+    private static boolean waitMove(char[] board, char side) throws IOException {
+        System.out.println("Waiting for Opponent to Move");
+        int enemyPos = Integer.parseInt(connect.getMessage());
+        System.out.println("Opponent placed " + side + " at " + enemyPos);
+        board[enemyPos] = side;
         drawBoard(board);
-        Scanner s = new Scanner(System.in);
+        if(winnerExists(board)){
+            System.out.println("You Lose");
+            return true;
+        } else if(isBoardFull(board)){
+            System.out.println("Draw");
+            return true;
+        }
+        return false;
+    }
+    private static boolean makeMove(char[] board, char side) throws IOException {
+        int pos = -1;
+        while (isSpaceFull(board, pos)){
+            System.out.println("Please enter board position (0-8) for a " + side + ": ");
+            pos = s.nextInt();
+        }
+        board[pos] = side;
+        drawBoard(board);
+        connect.sendMessage(Integer.toString(pos));
+        if(winnerExists(board)){
+            System.out.println("You win!");
+            return true;
+        } else if(isBoardFull(board)){
+            System.out.println("Draw");
+            return true;
+        }
+        return false;
+    }
+    public static void main(String [ ] args) throws IOException {
+
+        char[] board = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+        connect = new IPConnect();
+        drawBoard(board);
+        s = new Scanner(System.in);
         System.out.println("Host Server (h) or Connect to Server (c)");
         char hostOrConnect = s.nextLine().charAt(0);
         if(hostOrConnect == 'h'){
@@ -55,31 +89,10 @@ public class TicTacToe {
             System.out.println("What Port to host on?");
             connect.hostSocket(s.nextInt());
             while (!winnerExists(board) && !isBoardFull(board)){
-                System.out.println("Waiting for Opponent to Move");
-                int enemyPos = Integer.parseInt(connect.getMessage());
-                System.out.println("Opponent placed X at " + enemyPos);
-                board[enemyPos] = 'X';
-                drawBoard(board);
-                if(winnerExists(board)){
-                    System.out.println("You Lose");
-                    break;
-                } else if(isBoardFull(board)){
-                    System.out.println("Draw");
+                if(waitMove(board, 'X')){
                     break;
                 }
-                int pos = -1;
-                while (isSpaceFull(board, pos)){
-                    System.out.println("Please enter board position (0-8) for a O: ");
-                    pos = s.nextInt();
-                }
-                board[pos] = 'O';
-                drawBoard(board);
-                connect.sendMessage(Integer.toString(pos));
-                if(winnerExists(board)){
-                    System.out.println("You win!");
-                    break;
-                } else if(isBoardFull(board)){
-                    System.out.println("Draw");
+                if(makeMove(board, 'O')){
                     break;
                 }
             }
@@ -92,33 +105,13 @@ public class TicTacToe {
             System.out.println(ip);
             connect.connectSocket(port, ip);
             while (!winnerExists(board) && !isBoardFull(board)){
-                int pos = -1;
-                while (isSpaceFull(board, pos)){
-                    System.out.println("Please enter board position (0-8) for a X: ");
-                    pos = s.nextInt();
-                }
-                board[pos] = 'X';
-                drawBoard(board);
-                connect.sendMessage(Integer.toString(pos));
-                if(winnerExists(board)){
-                    System.out.println("You win!");
-                    break;
-                } else if(isBoardFull(board)){
-                    System.out.println("Draw");
+                if(makeMove(board, 'X')){
                     break;
                 }
-                System.out.println("Waiting for Opponent to Move");
-                int enemyPos = Integer.parseInt(connect.getMessage());
-                System.out.println("Opponent placed O at " + enemyPos);
-                board[enemyPos] = 'O';
-                drawBoard(board);
-                if(winnerExists(board)){
-                    System.out.println("You Lose");
-                    break;
-                } else if(isBoardFull(board)){
-                    System.out.println("Draw");
+                if(waitMove(board, 'O')){
                     break;
                 }
+
             }
         }
         connect.killSocket();
