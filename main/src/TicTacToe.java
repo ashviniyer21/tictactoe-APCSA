@@ -76,7 +76,7 @@ public class TicTacToe {
         }
         return false;
     }
-    public static void main(String [ ] args) throws IOException {
+    public static void main(String[] args) throws IOException {
 
         char[] board = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
         connect = new IPConnect();
